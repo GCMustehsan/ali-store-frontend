@@ -12,10 +12,12 @@ export default function SaleEditForm({ sale, products, onUpdateSale, onSuccess, 
   const [validationErrors, setValidationErrors] = useState([])
   const [hasStockError, setHasStockError] = useState(false)
   const [productDropdownOpen, setProductDropdownOpen] = useState(null)
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(null)
   const [paymentDropdownOpen, setPaymentDropdownOpen] = useState(false)
 
   // Refs for handling outside clicks
   const dropdownRefs = useRef([])
+  const categoryDropdownRefs = useRef([])
   const paymentDropdownRef = useRef(null)
 
   // Filter out invalid products
@@ -23,10 +25,13 @@ export default function SaleEditForm({ sale, products, onUpdateSale, onSuccess, 
     ? products.filter((product) => product && product._id && product.name && product.stock >= 0)
     : []
 
+  // Get unique categories from products
+  const categories = [...new Set(validProducts.map((product) => product.category))].filter(Boolean)
+
   // Initialize form with sale data - ONLY ONCE when the component mounts or sale changes
   useEffect(() => {
     if (sale && sale.items) {
-      // Add availableStock to each item
+      // Add availableStock and category to each item
       const itemsWithStock = sale.items.map((item) => {
         const product = validProducts.find((p) => p._id === item.productId)
         // If we find the product, add its current stock plus the quantity from this sale
@@ -35,6 +40,7 @@ export default function SaleEditForm({ sale, products, onUpdateSale, onSuccess, 
         return {
           ...item,
           availableStock,
+          category: product ? product.category : "",
         }
       })
 
@@ -57,6 +63,15 @@ export default function SaleEditForm({ sale, products, onUpdateSale, onSuccess, 
         setProductDropdownOpen(null)
       }
 
+      // Close category dropdowns
+      if (
+        categoryDropdownOpen !== null &&
+        categoryDropdownRefs.current[categoryDropdownOpen] &&
+        !categoryDropdownRefs.current[categoryDropdownOpen].contains(event.target)
+      ) {
+        setCategoryDropdownOpen(null)
+      }
+
       // Close payment dropdown
       if (paymentDropdownOpen && paymentDropdownRef.current && !paymentDropdownRef.current.contains(event.target)) {
         setPaymentDropdownOpen(false)
@@ -67,7 +82,7 @@ export default function SaleEditForm({ sale, products, onUpdateSale, onSuccess, 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside)
     }
-  }, [productDropdownOpen, paymentDropdownOpen])
+  }, [productDropdownOpen, categoryDropdownOpen, paymentDropdownOpen])
 
   // Validate stock levels whenever items change
   useEffect(() => {
@@ -102,6 +117,7 @@ export default function SaleEditForm({ sale, products, onUpdateSale, onSuccess, 
           salePrice: 0,
           unit: "count",
           availableStock: 0,
+          category: "",
         },
       ],
     })
@@ -110,6 +126,22 @@ export default function SaleEditForm({ sale, products, onUpdateSale, onSuccess, 
   const handleRemoveSaleItem = (index) => {
     const items = [...editedSale.items]
     items.splice(index, 1)
+    setEditedSale({ ...editedSale, items })
+  }
+
+  const handleUpdateSaleItemCategory = (index, category) => {
+    const items = [...editedSale.items]
+    items[index] = {
+      ...items[index],
+      category,
+      // Reset product selection when category changes
+      productId: "",
+      productName: "",
+      purchasePrice: 0,
+      salePrice: 0,
+      unit: "count",
+      availableStock: 0,
+    }
     setEditedSale({ ...editedSale, items })
   }
 
@@ -130,6 +162,7 @@ export default function SaleEditForm({ sale, products, onUpdateSale, onSuccess, 
           salePrice: product.salePrice,
           unit: product.unit || "count",
           availableStock: product.stock + originalQuantity,
+          category: product.category,
         }
       }
     } else if (field === "quantity") {
@@ -191,8 +224,8 @@ export default function SaleEditForm({ sale, products, onUpdateSale, onSuccess, 
 
     // Only proceed if there are no stock errors
     if (!hasStockError) {
-      // Remove availableStock from items before submitting
-      const submitItems = editedSale.items.map(({ availableStock, ...item }) => item)
+      // Remove availableStock and category from items before submitting
+      const submitItems = editedSale.items.map(({ availableStock, category, ...item }) => item)
       onUpdateSale({
         ...editedSale,
         items: submitItems,
@@ -208,7 +241,13 @@ export default function SaleEditForm({ sale, products, onUpdateSale, onSuccess, 
   // Update refs array when items change
   useEffect(() => {
     dropdownRefs.current = dropdownRefs.current.slice(0, editedSale.items.length)
+    categoryDropdownRefs.current = categoryDropdownRefs.current.slice(0, editedSale.items.length)
   }, [editedSale.items.length])
+
+  // Get products filtered by category
+  const getProductsByCategory = (category) => {
+    return validProducts.filter((product) => product.category === category)
+  }
 
   return (
     <div className="grid gap-4 py-4">
@@ -229,23 +268,64 @@ export default function SaleEditForm({ sale, products, onUpdateSale, onSuccess, 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-gray-700">Products</label>
         {editedSale.items.map((item, index) => (
-          <div key={`item-${index}`} className={`flex ${isMobile ? "flex-col" : "items-center"} gap-2`}>
+          <div key={`item-${index}`} className={`flex ${isMobile ? "flex-col" : "items-start"} gap-2`}>
+            {/* Category Selection */}
+            <div className="relative flex-1" ref={(el) => (categoryDropdownRefs.current[index] = el)}>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Category</label>
+              <button
+                type="button"
+                className={`w-full flex items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+                onClick={() => setCategoryDropdownOpen(categoryDropdownOpen === index ? null : index)}
+              >
+                {item.category ? item.category : "Select category"}
+                <FaChevronDown className="ml-2 h-4 w-4" />
+              </button>
+              {categoryDropdownOpen === index && (
+                <div className="absolute z-[110] mt-1 w-full rounded-md bg-white shadow-lg max-h-60 overflow-auto">
+                  <div className="py-1">
+                    {categories.length > 0 ? (
+                      categories.map((category) => (
+                        <button
+                          key={`category-${category}`}
+                          type="button"
+                          className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => {
+                            handleUpdateSaleItemCategory(index, category)
+                            setCategoryDropdownOpen(null)
+                          }}
+                        >
+                          {category}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-2 text-sm text-gray-500">No categories available</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Product Selection - Only enabled if category is selected */}
             <div className="relative flex-1" ref={(el) => (dropdownRefs.current[index] = el)}>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Product</label>
               <button
                 type="button"
                 className={`w-full flex items-center justify-between rounded-md border ${
                   item.productId && item.quantity > item.availableStock ? "border-red-500" : "border-gray-300"
-                } bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
-                onClick={() => setProductDropdownOpen(productDropdownOpen === index ? null : index)}
+                } bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  !item.category ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+                onClick={() => item.category && setProductDropdownOpen(productDropdownOpen === index ? null : index)}
+                disabled={!item.category}
               >
                 {item.productId ? item.productName : "Select product"}
                 <FaChevronDown className="ml-2 h-4 w-4" />
               </button>
-              {productDropdownOpen === index && (
+              {productDropdownOpen === index && item.category && (
                 <div className="absolute z-[110] mt-1 w-full rounded-md bg-white shadow-lg max-h-60 overflow-auto">
                   <div className="py-1">
-                    {validProducts.length > 0 ? (
-                      validProducts.map((product) => (
+                    {getProductsByCategory(item.category).length > 0 ? (
+                      getProductsByCategory(item.category).map((product) => (
                         <button
                           key={`product-${product._id}`}
                           type="button"
@@ -259,12 +339,13 @@ export default function SaleEditForm({ sale, products, onUpdateSale, onSuccess, 
                         </button>
                       ))
                     ) : (
-                      <div className="px-4 py-2 text-sm text-gray-500">No products available</div>
+                      <div className="px-4 py-2 text-sm text-gray-500">No products available in this category</div>
                     )}
                   </div>
                 </div>
               )}
             </div>
+
             <div className={`flex ${isMobile ? "w-full" : "w-auto"} items-center gap-2 mt-2 md:mt-0`}>
               <input
                 type="number"
@@ -277,6 +358,7 @@ export default function SaleEditForm({ sale, products, onUpdateSale, onSuccess, 
                 min="0.01"
                 max={item.availableStock || 9999}
                 step={item.unit === "count" ? "1" : "0.01"}
+                disabled={!item.productId}
               />
               {item.productId && (
                 <span className="text-xs text-gray-500 whitespace-nowrap">Max: {item.availableStock}</span>
@@ -360,7 +442,6 @@ export default function SaleEditForm({ sale, products, onUpdateSale, onSuccess, 
 }
 
 
-// "use client"
 
 // import { useState, useEffect, useRef } from "react"
 // import { FaPlus, FaTrash, FaExclamationCircle, FaChevronDown } from "react-icons/fa"
@@ -385,12 +466,14 @@ export default function SaleEditForm({ sale, products, onUpdateSale, onSuccess, 
 //     ? products.filter((product) => product && product._id && product.name && product.stock >= 0)
 //     : []
 
-//   // Initialize form with sale data
+//   // Initialize form with sale data - ONLY ONCE when the component mounts or sale changes
 //   useEffect(() => {
 //     if (sale && sale.items) {
 //       // Add availableStock to each item
 //       const itemsWithStock = sale.items.map((item) => {
 //         const product = validProducts.find((p) => p._id === item.productId)
+//         // If we find the product, add its current stock plus the quantity from this sale
+//         // (since this quantity was already deducted from the product's stock)
 //         const availableStock = product ? product.stock + item.quantity : item.quantity
 //         return {
 //           ...item,
@@ -403,7 +486,7 @@ export default function SaleEditForm({ sale, products, onUpdateSale, onSuccess, 
 //         paymentMethod: sale.paymentMethod || "Cash",
 //       })
 //     }
-//   }, [sale, validProducts])
+//   }, [sale]) // Only depend on sale, not validProducts which could change frequently
 
 //   // Handle outside clicks to close dropdowns
 //   useEffect(() => {
@@ -718,4 +801,5 @@ export default function SaleEditForm({ sale, products, onUpdateSale, onSuccess, 
 //     </div>
 //   )
 // }
+
 

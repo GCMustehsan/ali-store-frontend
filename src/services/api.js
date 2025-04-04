@@ -1,5 +1,8 @@
+
+
 // import axios from "axios"
 
+// // const API_URL = "https://musthesan-backend-ncfl.vercel.app/api"
 // const API_URL = "http://localhost:5000/api"
 
 // // Create axios instance
@@ -57,6 +60,11 @@
 
 //   create: async (saleData) => {
 //     const response = await api.post("/sales", saleData)
+//     return response.data.data
+//   },
+
+//   update: async (id, saleData) => {
+//     const response = await api.put(`/sales/${id}`, saleData)
 //     return response.data.data
 //   },
 
@@ -182,6 +190,14 @@ export const saleAPI = {
     const response = await api.get("/sales/today")
     return response.data.data
   },
+   createManual: async (saleData) => {
+    const response = await api.post("/sales/manual", saleData)
+    return response.data.data
+  },
+  getManualSales: async () => {
+    const response = await api.get("/sales/manual")
+    return response.data.data
+  },
 }
 
 // Dashboard API calls
@@ -205,7 +221,11 @@ export const dashboardAPI = {
     const response = await api.get("/dashboard/category-distribution")
     return response.data.data
   },
+
+  getDailySalesData: async () => {
+    const response = await api.get("/dashboard/daily-sales")
+    return response.data.data
+  },
 }
 
 export default api
-

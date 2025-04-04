@@ -122,9 +122,10 @@ export default function DashboardFilters({
 }
 
 
-// "use client"
 
-// import { useState } from "react"
+
+
+// import { useState, useRef, useEffect } from "react"
 // import { FaChevronDown } from "react-icons/fa"
 
 // export default function DashboardFilters({
@@ -137,9 +138,34 @@ export default function DashboardFilters({
 //   const [isPeriodDropdownOpen, setIsPeriodDropdownOpen] = useState(false)
 //   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
 
+//   const periodDropdownRef = useRef(null)
+//   const categoryDropdownRef = useRef(null)
+
+//   // Handle outside clicks to close dropdowns
+//   useEffect(() => {
+//     function handleClickOutside(event) {
+//       if (isPeriodDropdownOpen && periodDropdownRef.current && !periodDropdownRef.current.contains(event.target)) {
+//         setIsPeriodDropdownOpen(false)
+//       }
+
+//       if (
+//         isCategoryDropdownOpen &&
+//         categoryDropdownRef.current &&
+//         !categoryDropdownRef.current.contains(event.target)
+//       ) {
+//         setIsCategoryDropdownOpen(false)
+//       }
+//     }
+
+//     document.addEventListener("mousedown", handleClickOutside)
+//     return () => {
+//       document.removeEventListener("mousedown", handleClickOutside)
+//     }
+//   }, [isPeriodDropdownOpen, isCategoryDropdownOpen])
+
 //   return (
 //     <div className="flex flex-col md:flex-row gap-2 mb-4">
-//       <div className="relative">
+//       <div className="relative" ref={periodDropdownRef}>
 //         <button
 //           className="flex items-center justify-between w-full md:w-auto px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
 //           onClick={() => setIsPeriodDropdownOpen(!isPeriodDropdownOpen)}
@@ -180,41 +206,42 @@ export default function DashboardFilters({
 //         )}
 //       </div>
 
-//       <div className="relative">
-//         <button
-//           className="flex items-center justify-between w-full md:w-auto px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
-//           onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-//         >
-//           {categoryFilter === "all" ? "All Categories" : categoryFilter}
-//           <FaChevronDown className="ml-2 h-4 w-4" />
-//         </button>
-//         {isCategoryDropdownOpen && (
-//           <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1">
-//             <button
-//               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-//               onClick={() => {
-//                 setCategoryFilter("all")
-//                 setIsCategoryDropdownOpen(false)
-//               }}
-//             >
-//               All Categories
-//             </button>
-//             {categories.map((category) => (
+//       {categories && categories.length > 0 && (
+//         <div className="relative" ref={categoryDropdownRef}>
+//           <button
+//             className="flex items-center justify-between w-full md:w-auto px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
+//             onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+//           >
+//             {categoryFilter === "all" ? "All Categories" : categoryFilter}
+//             <FaChevronDown className="ml-2 h-4 w-4" />
+//           </button>
+//           {isCategoryDropdownOpen && (
+//             <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1">
 //               <button
-//                 key={category}
 //                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
 //                 onClick={() => {
-//                   setCategoryFilter(category)
+//                   setCategoryFilter("all")
 //                   setIsCategoryDropdownOpen(false)
 //                 }}
 //               >
-//                 {category}
+//                 All Categories
 //               </button>
-//             ))}
-//           </div>
-//         )}
-//       </div>
+//               {categories.map((category) => (
+//                 <button
+//                   key={category}
+//                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+//                   onClick={() => {
+//                     setCategoryFilter(category)
+//                     setIsCategoryDropdownOpen(false)
+//                   }}
+//                 >
+//                   {category}
+//                 </button>
+//               ))}
+//             </div>
+//           )}
+//         </div>
+//       )}
 //     </div>
 //   )
 // }
-
