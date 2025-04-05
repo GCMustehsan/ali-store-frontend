@@ -1,4 +1,4 @@
-import { FaDollarSign, FaBox, FaExclamationTriangle, FaChartBar } from "react-icons/fa"
+import { FaDollarSign, FaBox, FaExclamationTriangle, FaChartBar, FaWarehouse } from "react-icons/fa"
 
 export default function DashboardCards({
   totalRevenue,
@@ -8,8 +8,13 @@ export default function DashboardCards({
   sales = [],
   products = [],
 }) {
+  // Calculate total inventory value (sum of stock * purchasePrice for all products)
+  const totalInventoryValue = products.reduce((total, product) => {
+    return total + (product.stock * product.purchasePrice || 0)
+  }, 0)
+
   return (
-    <div className="grid gap-3 md:gap-4 grid-cols-2 md:grid-cols-4">
+    <div className="grid gap-3 md:gap-4 grid-cols-1 xs:grid-cols-2 lg:grid-cols-5">
       <div className="bg-white p-3 md:p-6 rounded-lg shadow">
         <div className="flex flex-row items-center justify-between space-y-0 pb-2">
           <h3 className="text-xs md:text-sm font-medium text-gray-500">Total Revenue</h3>
@@ -51,6 +56,14 @@ export default function DashboardCards({
         <p className="text-xs text-gray-500">
           {lowStockProducts && lowStockProducts.length > 0 ? "Products need restocking" : "All stock levels normal"}
         </p>
+      </div>
+      <div className="bg-white p-3 md:p-6 rounded-lg shadow">
+        <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <h3 className="text-xs md:text-sm font-medium text-gray-500">Inventory Value</h3>
+          <FaWarehouse className="h-4 w-4 text-gray-400" />
+        </div>
+        <div className="text-lg md:text-2xl font-bold">PKR {totalInventoryValue.toLocaleString()}</div>
+        <p className="text-xs text-gray-500">Total value of current stock</p>
       </div>
     </div>
   )
@@ -114,4 +127,3 @@ export default function DashboardCards({
 //     </div>
 //   )
 // }
-
